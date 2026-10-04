@@ -10,6 +10,34 @@ interface Props {
   googleReviewUrl: string | null;
 }
 
+// タグごとの入力例（プレースホルダー用）。
+// あくまで「こう書くと伝わりやすい」という例を見せるだけで、
+// 実際の文章化にはお客様が自由入力欄に書いた内容だけを使う。
+const TAG_PLACEHOLDER_HINTS: Record<string, string> = {
+  料理: '料理が美味しかった',
+  ドリンク: 'ドリンクも美味しかった',
+  店内の雰囲気: '古民家っぽい雰囲気が良かった',
+  接客: '店員さんの対応が良かった',
+  価格: '価格がちょうど良いと感じた',
+  居心地: '居心地が良くてゆっくりできた',
+  その他: '印象に残ったことがあった',
+};
+
+const DEFAULT_PLACEHOLDER =
+  '例：古民家っぽい雰囲気が良かった。高崎レモンサワーも美味しかった。料理も美味しかった。';
+
+function buildPlaceholder(selectedTags: string[]): string {
+  if (selectedTags.length === 0) return DEFAULT_PLACEHOLDER;
+
+  const hints = selectedTags
+    .map((tag) => TAG_PLACEHOLDER_HINTS[tag])
+    .filter((hint): hint is string => Boolean(hint));
+
+  if (hints.length === 0) return DEFAULT_PLACEHOLDER;
+
+  return `例：${hints.join('。')}。（実際に感じたことを自由に書いてください）`;
+}
+
 export default function ReviewAssistant({ googleReviewUrl }: Props) {
   const [step, setStep] = useState<Step>('input');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -26,6 +54,7 @@ export default function ReviewAssistant({ googleReviewUrl }: Props) {
 
   const trimmedLength = freeText.trim().length;
   const remaining = MAX_INPUT_LENGTH - freeText.length;
+  const dynamicPlaceholder = useMemo(() => buildPlaceholder(selectedTags), [selectedTags]);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -188,7 +217,7 @@ export default function ReviewAssistant({ googleReviewUrl }: Props) {
                 setFreeText(e.target.value);
                 if (inputError) setInputError(null);
               }}
-              placeholder="例：古民家っぽい雰囲気が良かった。高崎レモンサワーも美味しかった。料理も美味しかった。"
+              placeholder={dynamicPlaceholder}
               rows={7}
               maxLength={MAX_INPUT_LENGTH + 200}
               className="w-full resize-none rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3.5 text-[15px] leading-relaxed text-white placeholder:text-white/30 focus:border-brass-400"
